@@ -1,0 +1,159 @@
+{
+    "kind": "Template",
+    "apiVersion": "v1",
+    "metadata": {
+        "name": "jenkins-slave",
+        "annotations": {
+            "description": "Jenkins cluster example",
+            "iconClass": "icon-jenkins",
+            "tags": "instant-app,jenkins"
+        }
+    },
+    "objects": [
+        {
+    		"kind": "ImageStream",
+			"apiVersion": "v1",
+			"metadata": {
+				"name": "${APPLICATION_NAME}"
+			},
+			"spec": {
+				"dockerImageRepository": "ntahri/jenkins-slave",
+				"tags": [{
+					"name": "latest",
+					"from": {
+						"kind": "ImageStreamTag",
+						"name": "latest"
+					}
+				}]
+			}
+    },
+     {
+		    "kind": "DeploymentConfig",
+		    "apiVersion": "v1",
+		    "metadata": {
+		        "name": "${APPLICATION_NAME}",
+		        "creationTimestamp": null,
+		        "labels": {
+		            "application": "${APPLICATION_NAME}"
+		        }
+		    },
+		    "spec": {
+		        "strategy": {
+		            "type": "Rolling",
+		            "rollingParams": {
+		                "updatePeriodSeconds": 1,
+		                "intervalSeconds": 1,
+		                "timeoutSeconds": 600
+		            },
+		            "resources": {}
+		        },
+		        "triggers": [
+		            {
+		                "type": "ConfigChange"
+		            },
+		            {
+		                "type": "ImageChange",
+		                "imageChangeParams": {
+		                    "automatic": true,
+		                    "containerNames": [
+		                        "${APPLICATION_NAME}"
+		                    ],
+		                    "from": {
+		                        "kind": "ImageStreamTag",
+		                        "name": "${APPLICATION_NAME}:latest"
+		                    }
+		                }
+		            }
+		        ],
+		        "replicas": 1,
+		        "selector": {
+		            "application": "${APPLICATION_NAME}",
+		            "deploymentconfig": "${APPLICATION_NAME}"
+		        },
+		        "template": {
+		            "metadata": {
+		                "creationTimestamp": null,
+		                "labels": {
+		                    "application": "${APPLICATION_NAME}",
+		                    "deploymentconfig": "${APPLICATION_NAME}"
+		                }
+		            },
+		            "spec": {
+		                "volumes": [
+		                    {
+		                        "name": "${APPLICATION_NAME}-data",
+		                        "emptyDir": {}
+		                    }
+		                ],
+		                "containers": [
+		                    {
+		                        "name": "${APPLICATION_NAME}",
+		                        "image": "${APPLICATION_NAME}",
+                                "env": [
+                                    {
+                                        "name": "JENKINS_PASSWORD",
+                                        "value": "${JENKINS_PASSWORD}"
+                                    },
+                                    {
+                                        "name": "EXECUTORS",
+                                        "value": "${EXECUTORS}"
+                                    },
+                                    {
+                                        "name": "JENKINS_CONTEXT_PATH",
+                                        "value": ""
+                                    }
+                                ],
+		                        "resources": {},
+		                        "volumeMounts": [
+		                            {
+		                                "name": "${APPLICATION_NAME}-data",
+		                                "mountPath": "/var/lib/jenkins"
+		                            }
+		                        ],
+		                        "terminationMessagePath": "/dev/termination-log",
+		                        "imagePullPolicy": "Always"
+		                    }
+		                ],
+		                "restartPolicy": "Always",
+		                "terminationGracePeriodSeconds": 30,
+		                "dnsPolicy": "ClusterFirst",
+		                "securityContext": {}
+		            }
+		        }
+		    },
+		    "status": {}
+		}
+    ],
+    "parameters": [
+        {
+            "name": "APPLICATION_NAME",
+            "description": "Application Name",
+            "value": "jenkins-slave"
+        },
+        {
+            "name": "JENKINS_USERNAME",
+            "description": "Password for the Jenkins Master",
+            "value": "admin",
+            "generate": "expression"
+        },
+        {
+            "name": "JENKINS_PASSWORD",
+            "description": "Password for the Jenkins Master",
+            "value": "password",
+            "generate": "expression"
+        },
+        {
+            "name": "JENKINS_MASTER_HOST",
+            "description": "Jenkins Master host URL",
+            "value": "http://144.217.161.255:8080"
+        },
+        {
+            "name": "EXECUTORS",
+            "description": "Number of executors per slave agent",
+            "value": "1"
+        }
+    ],
+    "labels": {
+        "template": "jenkins-slave"
+    }
+}
