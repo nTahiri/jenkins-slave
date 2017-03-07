@@ -1,5 +1,11 @@
 FROM centos:centos7
 
+LABEL k8s.io.description="Jenkins is a continuous integration server" \
+      k8s.io.display-name="Jenkins 2.32.2" \
+      openshift.io.expose-services="8080:http" \
+      openshift.io.tags="jenkins,jenkins2,ci" \
+      io.openshift.s2i.scripts-url=image:///usr/libexec/s2i
+
 ENV JENKINS_SWARM_VERSION 3.3
 ENV JNLP_SLAVE_VERSION 3.7
 ENV HOME /opt/jenkins-slave
@@ -26,7 +32,16 @@ RUN curl https://pkg.jenkins.io/redhat-stable/jenkins.repo -o /etc/yum.repos.d/j
       && ln -s /usr/share/maven/bin/mvn /usr/bin/mvn
 
 # Copy script
-COPY jenkins-slave.sh /opt/jenkins-slave/bin/
+RUN mkdir /usr/libexec/s2i
+ADD ./s2i /usr/libexec/s2i
+
+RUN chown -R 1001:0 /usr/libexec/s2i
+RUN chmod -R 777 /usr/libexec/s2i
+RUN chmod 777 /usr/libexec/s2i/run
+RUN chmod 777 /usr/libexec/s2i/assemble
+
+
+#COPY jenkins-slave.sh /opt/jenkins-slave/bin/
 
 # Download plugin and modify permissions
 RUN curl --create-dirs -sSLo /opt/jenkins-slave/bin/swarm-client-$JENKINS_SWARM_VERSION-jar-with-dependencies.jar  https://repo.jenkins-ci.org/releases/org/jenkins-ci/plugins/swarm-client/$JENKINS_SWARM_VERSION/swarm-client-$JENKINS_SWARM_VERSION.jar \
@@ -40,4 +55,6 @@ VOLUME /var/lib/jenkins
 
 USER 1001
 
-ENTRYPOINT ["/opt/jenkins-slave/bin/jenkins-slave.sh"]
+#ENTRYPOINT ["/opt/jenkins-slave/bin/jenkins-slave.sh"]
+
+ENTRYPOINT ["/usr/libexec/s2i/run"]

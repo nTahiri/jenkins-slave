@@ -14,6 +14,23 @@
     		"kind": "ImageStream",
 			"apiVersion": "v1",
 			"metadata": {
+				"name": "${APPLICATION_NAME}-image"
+			},
+			"spec": {
+				"dockerImageRepository": "ntahri/jenkins-slave",
+				"tags": [{
+					"name": "latest",
+					"from": {
+						"kind": "ImageStreamTag",
+						"name": "latest"
+					}
+				}]
+			}
+    },
+        {
+    		"kind": "ImageStream",
+			"apiVersion": "v1",
+			"metadata": {
 				"name": "${APPLICATION_NAME}"
 			},
 			"spec": {
@@ -27,6 +44,62 @@
 				}]
 			}
     },
+      {
+			"kind": "BuildConfig",
+			"apiVersion": "v1",
+			"metadata": {
+				"name": "${APPLICATION_NAME}",
+				"labels": {
+					"application": "${APPLICATION_NAME}"
+				}
+			},
+			"spec": {
+				"source": {
+					"type": "Git",
+					"git": {
+						"uri": "https://github.com/nTahiri/jenkins-slave.git",
+						"ref": "master"
+					},
+					"contextDir": ""
+				},
+				"strategy": 
+        {
+					"type": "Source",
+					"sourceStrategy": {
+						"from": {
+							"kind": "ImageStreamTag",
+							"name": "${APPLICATION_NAME}-image:latest"
+						},
+						"env": [{
+							"name": "JENKINS_USERNAME",
+							"value": "${JENKINS_USERNAME}"
+						}, {
+							"name": "JENKINS_PASSWORD",
+							"value": "${JENKINS_PASSWORD}"
+						}, {
+							"name": "JENKINS_MASTER_HOST",
+							"value": "${JENKINS_MASTER_HOST}"
+						}, {
+							"name": "EXECUTORS",
+							"value": "${EXECUTORS}"
+						}]
+					}
+				},
+        "output":
+        {
+          "to":{
+            "kind": "ImageStreamTag",
+            "name": "${APPLICATION_NAME}:latest"
+          }
+        },
+				"triggers": [
+          {
+					"type": "ImageChange",
+					"imageChange": {}
+				  }
+          ]
+		}
+      }, 
      {
 		    "kind": "DeploymentConfig",
 		    "apiVersion": "v1",
@@ -49,9 +122,6 @@
 		        },
 		        "triggers": [
 		            {
-		                "type": "ConfigChange"
-		            },
-		            {
 		                "type": "ImageChange",
 		                "imageChangeParams": {
 		                    "automatic": true,
@@ -65,8 +135,12 @@
 		                }
 		            }
 		        ],
+                "strategy": { 
+                  "type": "Rolling"
+                },
 		        "replicas": 1,
 		        "selector": {
+                    "name": "${APPLICATION_NAME}",
 		            "application": "${APPLICATION_NAME}",
 		            "deploymentconfig": "${APPLICATION_NAME}"
 		        },
