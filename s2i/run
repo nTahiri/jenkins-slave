@@ -1,0 +1,15 @@
+#!/bin/bash
+
+echo "====> run script *** NT ====="
+set -e
+
+master_username=${JENKINS_USERNAME:-"admin"}
+master_password=${JENKINS_PASSWORD:-"password"}
+slave_executors=${EXECUTORS:-"1"}
+
+
+
+echo "=====> java -jar /opt/jenkins-slave/bin/swarm-client-3.3-jar-with-dependencies.jar -fsroot $HOME -master $JENKINS_MASTER_HOST -username $JENKINS_USERNAME -password $JENKINS_PASSWORD -executors $EXECUTORS"
+
+exec java -jar /opt/jenkins-slave/bin/swarm-client-3.3-jar-with-dependencies.jar -fsroot $HOME -master $JENKINS_MASTER_HOST -username $master_username -password $master_password -executors $slave_executors
+

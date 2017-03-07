@@ -1,0 +1,7 @@
+#!/bin/sh
+
+cat <<EOF
+
+=================== Jenkins Slave **** Assemble Script NT ===================
+
+EOF
